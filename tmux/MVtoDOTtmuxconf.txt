@@ -1,0 +1,69 @@
+# Inspired by "A UX Expert Fixes My Tmux": Top status bar, subtle themes, dynamic scripts, efficient controls
+
+# Set prefix to Ctrl-Space for easier access
+unbind C-b
+set -g prefix C-Space
+bind C-Space send-prefix
+
+# Enable mouse for selection and resizing
+set -g mouse on
+
+# True color support for themes and Neovim
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",xterm-256color:RGB"
+
+# Status bar at top, inspired by eye-level positioning
+set -g status-position top
+
+# Catppuccin theme (install via TPM below)
+set -g @plugin 'catppuccin/tmux'
+set -g @catppuccin_flavour 'mocha'  # Options: latte, frappe, macchiato, mocha
+
+# Nerd Fonts for icons (assume system fonts installed)
+set -g @catppuccin_window_left_separator ""
+set -g @catppuccin_window_right_separator " "
+set -g @catppuccin_window_middle_separator " █"
+set -g @catppuccin_window_number_position "right"
+set -g @catppuccin_window_default_fill "number"
+set -g @catppuccin_window_default_text "#W"
+set -g @catppuccin_window_current_fill "number"
+set -g @catppuccin_window_current_text "#W#{?window_zoomed_flag, (zoomed),}"
+set -g @catppuccin_status_modules_right "directory host session"
+set -g @catppuccin_status_modules_left " "
+set -g @catppuccin_status_left_separator  " "
+set -g @catppuccin_status_right_separator " "
+set -g @catppuccin_status_right_separator_inverse "no"
+set -g @catppuccin_status_fill "icon"
+set -g @catppuccin_status_connect_separator "no"
+set -g @catppuccin_directory_text "#{b:pane_current_path}"
+set -g @catppuccin_meetings_text "#(~/bin/meeting-alert.sh)"  # Custom script for alerts
+
+# Plugins via TPM (run TPM install after sourcing)
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-sensible'  # Sensible defaults
+set -g @plugin 'tmux-plugins/tmux-resurrect'  # Save/restore sessions
+set -g @plugin 'tmux-plugins/tmux-continuum'  # Auto-save sessions
+set -g @plugin 'tmux-plugins/tmux-yank'  # Clipboard integration
+set -g @plugin 'omerxx/tmux-sessionx'  # Fuzzy session switcher (inspired by t-switch)
+set -g @sessionx-bind 'o'  # Bind to Ctrl-o for fuzzy search
+
+# zoxide integration for session creation (requires zoxide installed)
+set -g @sessionx-zoxide-mode 'on'
+
+# Neovim compatibility: Focus events, seamless navigation
+set -g focus-events on
+set -g @resurrect-capture-pane-contents 'on'  # Restore Neovim sessions
+bind -n M-h select-pane -L
+bind -n M-j select-pane -D
+bind -n M-k select-pane -U
+bind -n M-l select-pane -R
+
+# Custom script for dynamic status bar alerts (e.g., meetings)
+# Place in ~/bin/meeting-alert.sh and make executable
+# Example: Check calendar with icalBuddy, echo icon if alert
+
+# Reload config
+bind r source-file ~/.tmux.conf \; display "Config reloaded"
+
+# Initialize TPM (run once after install)
+run '~/.tmux/plugins/tpm/tpm'

@@ -1,0 +1,151 @@
+# Master Bash Configurator v0.1 beta "coyote"
+
+# Integrated aliases (tweaked and placed here for easy access in a single file)
+alias vi='nvim'
+alias vim='nvim'
+alias nv='nvim'
+alias lla='eza -al'
+alias la='eza -a'
+alias ls='eza'
+alias l='eza'
+alias lr='eza -R'
+alias ll='eza -l --sort newest'
+alias l.='la -d .?*'
+alias s='du -sh * | sort -h'
+alias h='clear;neofetch;eza'
+alias mv='mv -i'
+alias cp='cp -i'
+alias df='dysk'
+
+# One-time bootstrap for CLI tools and configs (headless server focus)
+# This section installs essentials only once, assuming initial sudo access on Debian-based systems (Ubuntu, Debian, Proxmox, Mint).
+# Debug: Echoes progress; runs safely with existence checks. Logs to ~/src/bashrc/log/YYMMDDHHMMSS-install-update.log
+
+if [ ! -f ~/.dotfiles_installed ]; then
+  # Create project and log directory if missing
+  mkdir -p ~/src/bashrc/log
+  LOG_FILE=~/src/bashrc/log/$(date +%y%m%d%H%M%S)-install-update.log
+  echo "Bootstrap log: $LOG_FILE"
+
+  # Redirect all output to log and console (stdout/stderr)
+  exec > >(tee -a "$LOG_FILE") 2>&1
+
+  # Error handling trap
+  trap 'echo "Error on line $LINENO"; exit 1' ERR
+
+  echo "Starting bootstrap: Setting up passwordless sudo..."
+
+  # Set up passwordless sudo for current user (may prompt once initially)
+  if [ ! -f /etc/sudoers.d/$USER ]; then
+    echo "$USER ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$USER
+    sudo chmod 0440 /etc/sudoers.d/$USER
+    echo "Passwordless sudo configured."
+  else
+    echo "Passwordless sudo already set; skipping."
+  fi
+
+  echo "Updating system and installing CLI packages..."
+  sudo apt update
+  echo "Apt update complete."
+  sudo apt install -y build-essential ninja-build gettext cmake curl git ripgrep tmux btop openssh-server nfs-common bat yt-dlp ffmpeg
+
+  echo "CLI packages installed."
+
+  # Install Rust and Cargo if not present
+  if ! command -v cargo &>/dev/null; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+    echo "Rust and Cargo installed."
+  else
+    echo "Rust and Cargo already installed; skipping."
+  fi
+
+  # Cargo installs: Check and install only if missing
+  for crate in starship eza nu dysk caligula; do
+    if ! command -v $crate &>/dev/null; then
+      cargo install $crate --locked
+      echo "$crate installed."
+    else
+      echo "$crate already installed; skipping."
+    fi
+  done
+  echo "Cargo tools installation complete."
+
+  # Build Neovim from source if not installed
+  if ! command -v nvim &>/dev/null; then
+    mkdir -p ~/src
+    git clone https://github.com/neovim/neovim.git ~/src/neovim
+    cd ~/src/neovim
+    git checkout stable
+    make CMAKE_BUILD_TYPE=RelWithDebInfo
+    sudo make install
+    cd -
+    rm -rf ~/src/neovim
+    echo "Neovim built and installed."
+  else
+    echo "Neovim already installed; skipping."
+  fi
+
+  # Optional: Copy Neovim configs from project dir if available (for transparency, assume manual placement in ~/src/bashrc/nvim/)
+  if [ -d ~/src/bashrc/nvim ]; then
+    mkdir -p ~/.config/nvim
+    cp -r ~/src/bashrc/nvim/* ~/.config/nvim/
+    echo "Neovim configs copied to ~/.config/nvim/."
+  fi
+
+  # Mark as installed and reload shell
+  touch ~/.dotfiles_installed
+  echo "Bootstrap complete. Reloading shell..."
+  exec bash
+fi
+
+# Standard paths and editor (Neovim as default for CLI editing)
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/bin:$PATH"
+export EDITOR=nvim
+set -o vi # Vi mode for efficient CLI navigation
+
+# Skip if non-interactive (common in headless scripts)
+if [[ $- != *i* ]]; then return; fi
+
+# History settings (large for server logs/analysis)
+HISTCONTROL=ignoreboth
+shopt -s histappend
+HISTSIZE=10000
+HISTFILESIZE=20000
+
+# Window size check (useful in tmux/SSH)
+shopt -s checkwinsize
+
+# Lesspipe for better file viewing in CLI
+if command -v lesspipe >/dev/null; then eval "$(SHELL=/bin/sh lesspipe)"; fi
+
+# Prompt with color support (simplified: @host:dir$)
+color_prompt=no
+case "$TERM" in xterm-color | *-256color) color_prompt=yes ;; esac
+if [ "$color_prompt" = yes ]; then
+  export PS1="\[\e[31m\]@\h\[\e[m\]:\[\e[33m\]\w\[\e[m\]\\$ "
+else
+  export PS1='@\h:\w\$ '
+fi
+
+# Dircolors for ls colors (CLI enhancement)
+if command -v dircolors >/dev/null; then
+  [ -r ~/.dircolors ] && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+fi
+
+# Bash completion (improves CLI usability)
+if ! shopt -oq posix; then
+  [ -f /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion ||
+    [ -f /etc/bash_completion ] && . /etc/bash_completion
+fi
+
+# Starship prompt init (cross-shell, customizable for headless)
+eval "$(starship init bash)"
+
+# Cargo env (for Rust tools)
+. "$HOME/.cargo/env"
+
+# Auto-start tmux if not in one (essential for headless sessions)
+if command -v tmux &>/dev/null && [ -z "$TMUX" ]; then
+  tmux new-session -A -s NAME
+fi

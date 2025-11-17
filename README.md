@@ -82,6 +82,7 @@ coyoteUI is the foundation for a **terminal-native IDE**:
 - → Login → tmux → Neovim split with project → code.
 
 # Project Structure
+```
 ~/src/coyoteUI/
 ├── go-coyote.sh          # Install/update script
 ├── bashrc/               # MVtoDOTbashrc.txt
@@ -91,12 +92,11 @@ coyoteUI is the foundation for a **terminal-native IDE**:
 ├── log/                  # Timestamped install logs
 ├── KEYMAPS.md            # Keymap cheat sheet
 └── README.md             # You're here
-
+```
 
 # Quickstart Guide
 
 ## Clone and deploy
-```
 
 ```
 git clone https://github.com/badlandz/coyoteUI.git ~/src/ 
@@ -109,4 +109,4 @@ cd ~/src/coyoteUI
 nvim nvim-config/lua/config/keymaps.lua
 ./go-coyote.sh  # Applies instantly
 ```
-```
+

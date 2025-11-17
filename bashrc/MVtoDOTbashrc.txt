@@ -147,5 +147,5 @@ eval "$(starship init bash)"
 
 # Auto-start tmux if not in one (essential for headless sessions)
 if command -v tmux &>/dev/null && [ -z "$TMUX" ]; then
-  tmux new-session -A -s NAME
+  tmux new-session -A -s BAUX \; new-window
 fi

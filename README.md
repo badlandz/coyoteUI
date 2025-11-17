@@ -96,7 +96,6 @@ coyoteUI is the foundation for a **terminal-native IDE**:
 # Quickstart Guide
 
 ## Clone and deploy
-```
 
 ```
 git clone https://github.com/badlandz/coyoteUI.git ~/src/ 
@@ -109,4 +108,4 @@ cd ~/src/coyoteUI
 nvim nvim-config/lua/config/keymaps.lua
 ./go-coyote.sh  # Applies instantly
 ```
-```
+

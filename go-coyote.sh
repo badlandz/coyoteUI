@@ -45,17 +45,21 @@ if [ -d "$PROJECT_DIR/neovim-src" ]; then
   echo "Neovim rebuilt from source."
 fi
 
-# Deploy configs to defaults (idempotent)
+# Deploy configs to defaults (idempotent, robust for dirs)
 deploy_config() {
   local src="$1" dest="$2"
   mkdir -p "$(dirname "$dest")"
-  cp -r "$src" "$dest"
+  if [ -d "$src" ]; then
+    cp -r "$src/." "$dest/"
+  else
+    cp "$src" "$dest"
+  fi
   echo "Deployed: $src -> $dest"
 }
 
 deploy_config "$PROJECT_DIR/bashrc/MVtoDOTbashrc.txt" ~/.bashrc
 deploy_config "$PROJECT_DIR/tmux/MVtoDOTtmuxconf.txt" ~/.tmux.conf
-deploy_config "$PROJECT_DIR/nvim-config/"* ~/.config/nvim/
+deploy_config "$PROJECT_DIR/nvim-config" ~/.config/nvim
 
 # Run component bootstraps if needed (e.g., bashrc bootstrap)
 if [ -f ~/.bashrc ]; then
